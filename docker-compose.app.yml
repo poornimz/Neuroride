@@ -1,0 +1,72 @@
+services:
+
+
+  backend:
+    build:
+      context: ./backend
+    container_name: neuroride-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-neuroride}
+      POSTGRES_USER: ${POSTGRES_USER:-neuroride_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-neuroride_secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-neuroride_redis_secret}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    ports:
+      - "8080:8080"
+    networks:
+      - neuroride-net
+
+  ai-service:
+    build:
+      context: ./ai-service
+    container_name: neuroride-ai-service
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-neuroride}
+      POSTGRES_USER: ${POSTGRES_USER:-neuroride_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-neuroride_secret}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      BACKEND_URL: http://backend:8080
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    ports:
+      - "8081:8081"
+    networks:
+      - neuroride-net
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+        NEXT_PUBLIC_WS_URL: ws://localhost:8080/ws
+    container_name: neuroride-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    networks:
+      - neuroride-net
+
+  grafana:
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro

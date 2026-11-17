@@ -1,0 +1,56 @@
+{
+  "title": "NeuroRide Distributed Platform",
+  "uid": "neuroride-overview",
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Redis Geo Search p95 Latency (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(neuroride_geo_search_latency_seconds_bucket[1m])) by (le)) * 1000",
+          "legendFormat": "p95 Geo Search (ms)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Ride Requests / sec (Matched vs Unmatched)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(neuroride_rides_requested_total[1m])) by (matched)",
+          "legendFormat": "matched={{matched}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Gemini AI Insight Generation p95 (s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(neuroride_ai_generation_duration_seconds_bucket[5m])) by (le, event_type))",
+          "legendFormat": "{{event_type}} p95"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Spring Boot HTTP Requests p95 Latency (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=~\"/api/.*\"}[1m])) by (le, uri)) * 1000",
+          "legendFormat": "{{uri}}"
+        }
+      ]
+    }
+  ]
+}
