@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Boot Full Stack via Docker Compose
         run: |
-          cp -n .env.example .env || true
+          [ -f .env ] || cp .env.example .env
           docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
           for i in {1..40}; do
             if curl -sf http://localhost:8080/actuator/health; then
@@ -53,9 +53,7 @@ jobs:
             fi
             sleep 3
           done
-          echo "Backend failed to become healthy:"
           docker compose -f docker-compose.yml -f docker-compose.app.yml ps
-          docker logs neuroride-postgres --tail 40 || true
           docker logs neuroride-backend --tail 60 || true
           exit 1
       - name: Run k6 Smoke Test
